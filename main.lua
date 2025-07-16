@@ -1,12 +1,18 @@
--- Anime Fruit Simulator GUI Script (GUI Toggle Versi)
--- DISCLAIMER: Gunakan untuk pembelajaran. Resiko ditanggung pengguna.
+-- Anime Fruit OP GUI W/ Attach Check
+-- DISCLAIMER: Jangan abai terhadap TOS Roblox
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
+local RS = game:GetService("ReplicatedStorage")
+local WS = game:GetService("Workspace")
 local player = Players.LocalPlayer
 
--- Anti-AFK
+-- Pastikan game sudah load
+if not WS:FindFirstChild("Mobs") then
+    warn("Workspace.Mobs tidak ditemukan! Dieksekusi ulang setelah masuk game.")
+    return
+end
+
+-- Anti AFK
 local vu = game:GetService("VirtualUser")
 player.Idled:Connect(function()
     vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
@@ -23,57 +29,58 @@ local Settings = {
     AutoFruit = false
 }
 
--- Auto Skill Spam
+-- Skill spam loop
 spawn(function()
-    while wait(0.2) do
-        if Settings.AutoSkill then
+    while wait(0.3) do
+        if Settings.AutoSkill and RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("Skill") then
             for i = 1, 4 do
-                ReplicatedStorage.Remotes.Skill:FireServer("Skill"..i)
-                wait(0.1)
+                RS.Remotes.Skill:FireServer("Skill"..i)
             end
         end
     end
 end)
 
--- Auto Farm
+-- Farm musuh
 spawn(function()
     while wait(0.5) do
         if Settings.AutoFarm then
-            for _, mob in pairs(Workspace:WaitForChild("Mobs"):GetChildren()) do
-                if mob:FindFirstChild("HumanoidRootPart") and mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
-                    player.Character.HumanoidRootPart.CFrame = mob.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+            for _, mob in ipairs(WS:FindFirstChild("Mobs"):GetChildren()) do
+                local hrp = mob:FindFirstChild("HumanoidRootPart")
+                local h = mob:FindFirstChild("Humanoid")
+                if hrp and h and h.Health > 0 then
+                    player.Character.HumanoidRootPart.CFrame = hrp.CFrame * CFrame.new(0, 12, 0)
                 end
             end
         end
     end
 end)
 
--- Auto Quest
+-- Quest "Kill 10 Bandits"
 spawn(function()
-    while wait(5) do
-        if Settings.AutoQuest then
-            ReplicatedStorage.Remotes.Quest:FireServer("AcceptQuest", "Kill 10 Bandits") -- Ganti sesuai quest tersedia
+    while wait(10) do
+        if Settings.AutoQuest and RS:FindFirstChild("Remotes") and RS.Remotes:FindFirstChild("Quest") then
+            RS.Remotes.Quest:FireServer("AcceptQuest", "Kill 10 Bandits")
         end
     end
 end)
 
--- Auto Boss
+-- Boss farming
 spawn(function()
-    while wait(1) do
+    while wait(0.5) do
         if Settings.AutoBoss then
-            local boss = Workspace:FindFirstChild("Boss")
+            local boss = WS:FindFirstChild("Boss")
             if boss and boss:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)
+                player.Character.HumanoidRootPart.CFrame = boss.HumanoidRootPart.CFrame * CFrame.new(0, 12, 0)
             end
         end
     end
 end)
 
--- Auto Fruit Collect
+-- Collect fruits
 spawn(function()
     while wait(2) do
-        if Settings.AutoFruit then
-            for _, drop in pairs(Workspace:WaitForChild("Drops"):GetChildren()) do
+        if Settings.AutoFruit and WS:FindFirstChild("Drops") then
+            for _, drop in ipairs(WS.Drops:GetChildren()) do
                 if drop:IsA("Tool") and drop:FindFirstChild("Handle") then
                     firetouchinterest(player.Character.HumanoidRootPart, drop.Handle, 0)
                     wait()
@@ -84,34 +91,35 @@ spawn(function()
     end
 end)
 
--- GUI
-local screen = Instance.new("ScreenGui", game.CoreGui)
+-- Buat GUI
+local screen = Instance.new("ScreenGui")
+screen.Parent = game.CoreGui
 local frame = Instance.new("Frame", screen)
-frame.Position = UDim2.new(0,50,0,200)
-frame.Size = UDim2.new(0,180,0,230)
+frame.Size = UDim2.new(0, 180, 0, 200)
+frame.Position = UDim2.new(0, 10, 0, 100)
 frame.BackgroundTransparency = 0.4
-frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 
-local function makeToggle(name, index)
+local function toggleButton(name, i)
     local btn = Instance.new("TextButton", frame)
     btn.Size = UDim2.new(1, -10, 0, 30)
-    btn.Position = UDim2.new(0, 5, 0, 10 + index * 35)
+    btn.Position = UDim2.new(0, 5, 0, 10 + i*35)
     btn.Text = name .. ": OFF"
-    btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    btn.BackgroundColor3 = Color3.fromRGB(50,50,50)
     btn.TextColor3 = Color3.fromRGB(255,255,255)
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 16
     btn.MouseButton1Click:Connect(function()
         Settings[name] = not Settings[name]
         btn.Text = name .. (Settings[name] and ": ON" or ": OFF")
-        btn.BackgroundColor3 = Settings[name] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(40,40,40)
+        btn.BackgroundColor3 = Settings[name] and Color3.fromRGB(0,170,0) or Color3.fromRGB(50,50,50)
     end)
 end
 
-makeToggle("AutoQuest", 0)
-makeToggle("AutoFarm", 1)
-makeToggle("AutoSkill", 2)
-makeToggle("AutoBoss", 3)
-makeToggle("AutoFruit", 4)
+toggleButton("AutoQuest", 0)
+toggleButton("AutoFarm", 1)
+toggleButton("AutoSkill", 2)
+toggleButton("AutoBoss", 3)
+toggleButton("AutoFruit", 4)
 
-print("[Anime Fruit GUI Script] Loaded Successfully ✅")
+print("✅ Anime Fruit GUI OP: Menu siap!")
